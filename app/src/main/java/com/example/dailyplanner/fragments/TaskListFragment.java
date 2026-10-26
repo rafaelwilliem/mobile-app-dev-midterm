@@ -34,6 +34,7 @@ public class TaskListFragment extends Fragment {
     private TaskAdapter taskAdapter;
 
     // Explicit Intent launcher untuk menerima hasil dari AddTaskActivity
+    @SuppressWarnings("deprecation")
     private final ActivityResultLauncher<Intent> addTaskLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -42,7 +43,9 @@ public class TaskListFragment extends Fragment {
                     if (newTask != null) {
                         TaskManager.getInstance().addTask(newTask);
                         loadTasks();
-                        Toast.makeText(getContext(), "Tugas baru berhasil ditambahkan!", Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Tugas baru berhasil ditambahkan!", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
             }
@@ -63,8 +66,10 @@ public class TaskListFragment extends Fragment {
 
         // Navigasi ke AddTaskActivity via Explicit Intent
         fabAddTask.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), AddTaskActivity.class);
-            addTaskLauncher.launch(intent);
+            if (getActivity() != null) {
+                Intent intent = new Intent(getActivity(), AddTaskActivity.class);
+                addTaskLauncher.launch(intent);
+            }
         });
 
         loadTasks();
@@ -74,11 +79,13 @@ public class TaskListFragment extends Fragment {
 
     private void setupRecyclerView() {
         taskAdapter = new TaskAdapter(false, (task, isCompleted) -> {
-            TaskManager.getInstance().markTaskCompleted(task.getId(), isCompleted);
-            loadTasks();
-            if (isCompleted && getContext() != null) {
-                Toast.makeText(getContext(), "Tugas dipindahkan ke Riwayat!", Toast.LENGTH_SHORT).show();
-            }
+            // Post ke message queue RecyclerView agar aman dari IllegalStateException saat layout calculation
+            rvTasks.post(() -> {
+                TaskManager.getInstance().markTaskCompleted(task.getId(), isCompleted);
+                if (isCompleted && getContext() != null) {
+                    Toast.makeText(getContext(), "Tugas dipindahkan ke Riwayat!", Toast.LENGTH_SHORT).show();
+                }
+            });
         });
 
         rvTasks.setLayoutManager(new LinearLayoutManager(getContext()));

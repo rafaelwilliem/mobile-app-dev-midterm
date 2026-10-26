@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.CountDownTimer;
 import android.os.IBinder;
@@ -29,14 +30,28 @@ public class FocusTimerService extends Service {
     public static final String EXTRA_TIME_LEFT = "EXTRA_TIME_LEFT";
     public static final String EXTRA_IS_RUNNING = "EXTRA_IS_RUNNING";
     public static final String EXTRA_IS_FINISHED = "EXTRA_IS_FINISHED";
+    public static final String EXTRA_IS_IDLE = "EXTRA_IS_IDLE";
 
     private static final String CHANNEL_ID = "FocusTimerChannel";
     private static final int NOTIFICATION_ID = 101;
     public static final long DEFAULT_DURATION_MS = 25 * 60 * 1000; // 25 Menit
 
     private CountDownTimer countDownTimer;
-    private long timeLeftInMillis = DEFAULT_DURATION_MS;
-    private boolean isTimerRunning = false;
+    private static long timeLeftInMillis = DEFAULT_DURATION_MS;
+    private static boolean isTimerRunning = false;
+    private static boolean isIdle = true;
+
+    public static long getTimeLeftInMillis() {
+        return timeLeftInMillis;
+    }
+
+    public static boolean isTimerRunning() {
+        return isTimerRunning;
+    }
+
+    public static boolean isIdle() {
+        return isIdle;
+    }
 
     @Override
     public void onCreate() {
@@ -67,10 +82,27 @@ public class FocusTimerService extends Service {
     }
 
     private void startTimer() {
-        if (isTimerRunning) return;
+        // Jika waktu sebelumnya sudah habis (00:00), reset kembali ke durasi awal (25 menit)
+        if (timeLeftInMillis <= 0) {
+            timeLeftInMillis = DEFAULT_DURATION_MS;
+        }
+
+        isIdle = false;
+        Notification notification = buildNotification(formatTime(timeLeftInMillis));
+
+        // Wajib memanggil startForeground setiap kali startForegroundService dipanggil (beserta tipe FGS untuk Android 14+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
+
+        if (isTimerRunning) {
+            broadcastUpdate(false);
+            return;
+        }
 
         isTimerRunning = true;
-        startForeground(NOTIFICATION_ID, buildNotification(formatTime(timeLeftInMillis)));
 
         countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) {
             @Override
@@ -83,10 +115,11 @@ public class FocusTimerService extends Service {
             @Override
             public void onFinish() {
                 isTimerRunning = false;
+                isIdle = true;
                 timeLeftInMillis = 0;
                 broadcastUpdate(true);
                 updateNotification(getString(R.string.timer_finished_notif));
-                stopForeground(false);
+                stopForeground(STOP_FOREGROUND_DETACH);
             }
         }.start();
 
@@ -100,9 +133,10 @@ public class FocusTimerService extends Service {
             countDownTimer.cancel();
         }
         isTimerRunning = false;
+        isIdle = false;
         broadcastUpdate(false);
         updateNotification("Dijeda: " + formatTime(timeLeftInMillis));
-        stopForeground(false);
+        stopForeground(STOP_FOREGROUND_DETACH);
     }
 
     private void resetTimer() {
@@ -110,17 +144,21 @@ public class FocusTimerService extends Service {
             countDownTimer.cancel();
         }
         isTimerRunning = false;
+        isIdle = true;
         timeLeftInMillis = DEFAULT_DURATION_MS;
         broadcastUpdate(false);
-        stopForeground(true);
+        stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
 
     private void broadcastUpdate(boolean isFinished) {
         Intent broadcastIntent = new Intent(BROADCAST_TIMER_UPDATE);
+        // Set package agar broadcast tetap diterima oleh receiver dengan flag RECEIVER_NOT_EXPORTED di Android 14+
+        broadcastIntent.setPackage(getPackageName());
         broadcastIntent.putExtra(EXTRA_TIME_LEFT, timeLeftInMillis);
         broadcastIntent.putExtra(EXTRA_IS_RUNNING, isTimerRunning);
         broadcastIntent.putExtra(EXTRA_IS_FINISHED, isFinished);
+        broadcastIntent.putExtra(EXTRA_IS_IDLE, isIdle);
         sendBroadcast(broadcastIntent);
     }
 

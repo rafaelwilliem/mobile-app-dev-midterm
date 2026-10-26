@@ -42,8 +42,9 @@ public class DashboardFragment extends Fragment {
                 long timeLeft = intent.getLongExtra(FocusTimerService.EXTRA_TIME_LEFT, FocusTimerService.DEFAULT_DURATION_MS);
                 boolean isRunning = intent.getBooleanExtra(FocusTimerService.EXTRA_IS_RUNNING, false);
                 boolean isFinished = intent.getBooleanExtra(FocusTimerService.EXTRA_IS_FINISHED, false);
+                boolean isIdle = intent.getBooleanExtra(FocusTimerService.EXTRA_IS_IDLE, false);
 
-                updateTimerUI(timeLeft, isRunning, isFinished);
+                updateTimerUI(timeLeft, isRunning, isFinished, isIdle);
             }
         }
     };
@@ -71,9 +72,15 @@ public class DashboardFragment extends Fragment {
 
     private void setupTimerButtons() {
         btnStartTimer.setOnClickListener(v -> sendServiceAction(FocusTimerService.ACTION_START));
-        btnPauseTimer.setOnClickListener(v -> sendServiceAction(FocusTimerService.ACTION_PAUSE));
+        btnPauseTimer.setOnClickListener(v -> {
+            if (!FocusTimerService.isIdle()) {
+                sendServiceAction(FocusTimerService.ACTION_PAUSE);
+            }
+        });
         btnResetTimer.setOnClickListener(v -> {
-            sendServiceAction(FocusTimerService.ACTION_RESET);
+            if (!FocusTimerService.isIdle() || FocusTimerService.isTimerRunning()) {
+                sendServiceAction(FocusTimerService.ACTION_RESET);
+            }
             tvCountdown.setText(R.string.default_timer_display);
             tvTimerStatus.setText("Siap untuk fokus 25 menit");
         });
@@ -91,9 +98,10 @@ public class DashboardFragment extends Fragment {
         }
     }
 
-    private void updateTimerUI(long timeLeftInMillis, boolean isRunning, boolean isFinished) {
-        int minutes = (int) (timeLeftInMillis / 1000) / 60;
-        int seconds = (int) (timeLeftInMillis / 1000) % 60;
+    private void updateTimerUI(long timeLeftInMillis, boolean isRunning, boolean isFinished, boolean isIdle) {
+        long displayMillis = (isIdle && !isFinished) ? FocusTimerService.DEFAULT_DURATION_MS : timeLeftInMillis;
+        int minutes = (int) (displayMillis / 1000) / 60;
+        int seconds = (int) (displayMillis / 1000) % 60;
         tvCountdown.setText(String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds));
 
         if (isFinished) {
@@ -103,6 +111,8 @@ public class DashboardFragment extends Fragment {
             }
         } else if (isRunning) {
             tvTimerStatus.setText("🔥 Sesi fokus sedang berjalan...");
+        } else if (isIdle) {
+            tvTimerStatus.setText("Siap untuk fokus 25 menit");
         } else {
             tvTimerStatus.setText("⏸️ Sesi fokus dijeda");
         }
@@ -133,8 +143,13 @@ public class DashboardFragment extends Fragment {
             isReceiverRegistered = true;
         }
 
-        // Query status saat ini dari service
-        sendServiceAction(FocusTimerService.ACTION_GET_STATUS);
+        // Sinkronisasi state awal langsung dari service tanpa perlu start service saat masih idle
+        updateTimerUI(
+                FocusTimerService.getTimeLeftInMillis(),
+                FocusTimerService.isTimerRunning(),
+                false,
+                FocusTimerService.isIdle()
+        );
     }
 
     @Override
