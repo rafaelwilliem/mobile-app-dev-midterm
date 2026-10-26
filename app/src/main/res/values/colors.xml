@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#3F51B5</color>
+    <color name="primary_variant">#303F9F</color>
+    <color name="secondary">#FF4081</color>
+    <color name="secondary_variant">#C2185B</color>
+
+    <!-- UI Background and Surface Colors -->
+    <color name="background">#F5F7FB</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="divider">#E0E0E0</color>
+
+    <!-- Accent / Status Colors -->
+    <color name="status_pending">#FFA000</color>
+    <color name="status_completed">#4CAF50</color>
+    <color name="timer_accent">#3F51B5</color>
+    <color name="timer_bg">#E8EAF6</color>
+    <color name="error_color">#D32F2F</color>
+    <color name="white">#FFFFFF</color>
+</resources>
