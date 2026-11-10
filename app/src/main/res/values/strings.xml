@@ -1,0 +1,40 @@
+<resources>
+    <string name="app_name">Daily Planner</string>
+
+    <!-- Navigation Titles -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_tasks">Daftar Tugas</string>
+    <string name="nav_history">Riwayat</string>
+
+    <!-- Add Task Screen -->
+    <string name="title_add_task">Tambah Tugas Baru</string>
+    <string name="hint_task_title">Judul Tugas (wajib)</string>
+    <string name="hint_task_desc">Deskripsi Tugas (opsional)</string>
+    <string name="label_select_time">Pilih Waktu:</string>
+    <string name="btn_pick_time">Atur Waktu</string>
+    <string name="btn_save_task">Simpan Tugas</string>
+    <string name="btn_cancel">Batal</string>
+    <string name="error_empty_title">Judul tugas tidak boleh kosong!</string>
+
+    <!-- Dashboard Screen -->
+    <string name="dashboard_welcome">Selamat Datang di Daily Planner 👋</string>
+    <string name="dashboard_summary_title">Ringkasan Hari Ini</string>
+    <string name="dashboard_pending_count">Tugas Tertunda: %1$d</string>
+    <string name="dashboard_completed_count">Tugas Selesai: %1$d</string>
+    <string name="focus_timer_title">Focus Timer ⏱️</string>
+    <string name="default_timer_display">25:00</string>
+    <string name="btn_start_timer">Mulai</string>
+    <string name="btn_pause_timer">Jeda</string>
+    <string name="btn_reset_timer">Reset</string>
+
+    <!-- Task List & History Screen -->
+    <string name="empty_task_list">Belum ada tugas hari ini. Ketuk tombol + untuk menambah tugas baru.</string>
+    <string name="empty_history_list">Belum ada tugas yang diselesaikan.</string>
+    <string name="task_completed_badge">Selesai</string>
+
+    <!-- Service & Notification -->
+    <string name="notification_channel_name">Focus Timer Channel</string>
+    <string name="notification_channel_desc">Notifikasi untuk hitung mundur Focus Timer</string>
+    <string name="timer_running_notif">Focus Timer sedang berjalan…</string>
+    <string name="timer_finished_notif">Waktu fokus telah selesai! Kerja bagus 🎉</string>
+</resources>
